@@ -47,4 +47,15 @@ def delete_link_from_db(short_code):
         session.commit()
         return result.rowcount > 0
 
+def update_origin_link(short_code, new_url):
+    statement = select(Link).where(Link.short_code == short_code)
+    with Session(engine) as session:
+        link = session.scalar(statement)
+        if link is None:
+            return None
+        link.original_url = new_url
+        session.commit()
+        session.refresh(link)
+        return link
+
 

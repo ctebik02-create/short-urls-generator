@@ -3,7 +3,7 @@ from fastapi.responses import RedirectResponse
 from models.schemas import UrlInput, UrlOutput, StatisticOutput
 from services.url import random_url
 from storage.db import add_link_data, get_link_by_shortcode, get_all_links, clicks_count
-from storage.db import delete_link_from_db
+from storage.db import delete_link_from_db, update_origin_link
 from sqlalchemy.exc import IntegrityError
 
 
@@ -57,6 +57,21 @@ def delete_link(short_code: str):
     if not result:
         raise HTTPException(status_code=404, detail='Short code not found')
     return {'status': 'success'}
+
+@router.put('/update_original_url')
+def update_original_url(short_code: str, url: UrlInput):
+
+    new_url = str(url.url)
+
+    new = update_origin_link(short_code, new_url)
+    if new is None:
+        raise HTTPException(status_code=404, detail='Short code not found')
+    return new
+
+
+
+
+
 
 
 
