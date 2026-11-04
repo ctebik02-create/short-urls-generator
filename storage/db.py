@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from storage.orm import engine, Link
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, update
 
 with engine.connect() as conn:
     print("Database connection successful")
@@ -30,15 +30,15 @@ def get_all_links():
         return session.scalars(statement).all()
 
 def clicks_count(short_code):
-    statement = select(Link).where(Link.short_code == short_code)
+    statement = (
+        update(Link)
+        .where(Link.short_code == short_code)
+        .values(clicks=Link.clicks+1)
+    )
     with Session(engine) as session:
-        link = session.scalar(statement)
-        if link is None:
-            return None
-        link.clicks += 1
+        session.execute(statement)
         session.commit()
-        session.refresh(link)
-    return link
+
 
 def delete_link_from_db(short_code):
     statement = delete(Link).where(Link.short_code == short_code)
@@ -58,4 +58,14 @@ def update_origin_link(short_code, new_url):
         session.refresh(link)
         return link
 
+def change_condition_link(short_code, condition):
+    statement = select(Link).where(Link.short_code == short_code)
+    with Session(engine) as session:
+        link = session.scalar(statement)
+        if link is None:
+            return None
+        link.condition = condition
+        session.commit()
+        session.refresh(link)
+        return link
 

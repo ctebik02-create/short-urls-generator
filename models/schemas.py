@@ -13,3 +13,4 @@ class StatisticOutput(BaseModel):
     original_url: HttpUrl
     clicks: int
     short_code: str
+    condition: bool

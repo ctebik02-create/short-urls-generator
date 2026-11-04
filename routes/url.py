@@ -1,9 +1,9 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import RedirectResponse
 from models.schemas import UrlInput, UrlOutput, StatisticOutput
 from services.url import random_url
 from storage.db import add_link_data, get_link_by_shortcode, get_all_links, clicks_count
-from storage.db import delete_link_from_db, update_origin_link
+from storage.db import delete_link_from_db, update_origin_link, change_condition_link
 from sqlalchemy.exc import IntegrityError
 
 
@@ -68,6 +68,12 @@ def update_original_url(short_code: str, url: UrlInput):
         raise HTTPException(status_code=404, detail='Short code not found')
     return new
 
+@router.put('/change_condition', response_model=StatisticOutput)
+def change_condition(short_code: str, condition: bool):
+    link = change_condition_link(short_code, condition)
+    if link is None:
+        raise HTTPException(status_code=404, detail='Short code not found')
+    return link
 
 
 
@@ -78,9 +84,12 @@ def update_original_url(short_code: str, url: UrlInput):
 @router.get('/{short_code}', response_class=RedirectResponse)
 def redirect_link(short_code: str):
     #here we count clicks, and also return link object so we can use it for redirect
-    link = clicks_count(short_code)
+    link = get_link_by_shortcode(short_code)
 
     if link is None:
         raise HTTPException(status_code=404, detail='Short code not found')
-
+    if not link.condition:
+        raise HTTPException(status_code=404, detail='Short code not found')
+    clicks_count(short_code)
     return link.original_url
+
